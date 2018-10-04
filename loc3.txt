@@ -1,0 +1,5 @@
+AircraftCarrier 0 0 E S
+Frigate 4 4 S E
+Submarine 9 1 S E
+Cruiser 0 7 E N
+PatrolCraft 9 8 S W

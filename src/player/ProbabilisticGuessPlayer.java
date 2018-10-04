@@ -2,6 +2,9 @@ package player;
 
 import java.util.ArrayList;
 import java.util.Scanner;
+
+//import player.SampleRandomGuessPlayer.OwnShip;
+import ship.Ship;
 import world.World;
 import world.World.Coordinate;
 import world.World.ShipLocation;
@@ -23,6 +26,15 @@ public class ProbabilisticGuessPlayer  implements Player
 	private boolean aircraft, cruiser, frigate, patrol, sub;
 	private Coordinate lastHit;
 	private Coordinate firstHit;
+	private boolean isHit=false;
+	private class OwnShip { private OwnShip() {}
+	/*  24 */     Ship ship = null;
+	/*  25 */     int[] rowCdns = { -1, -1, -1, -1, -1 };
+	/*  26 */     int[] clnCdns = { -1, -1, -1, -1, -1 };
+	/*  27 */     boolean[] isdown = { true, true, true, true, true };
+	/*     */     
+	/*     */      }
+	/*  30 */   OwnShip[] ownShips = new OwnShip[5];
 	
     @Override
     public void initialisePlayer(World world) 
@@ -45,18 +57,9 @@ public class ProbabilisticGuessPlayer  implements Player
 
 	@Override
     public Answer getAnswer(Guess guess) 
-    {
-        // To be implemented.
-		Answer answer = new Answer();
-		if(shipLocations.contains(guess) == true)
-		{
-			answer.isHit = true;
-		}
-    	
-    	
-    	//answer.shipSunk = null;
-        // dummy return
-        return answer;
+    {	Answer localAnswer = new Answer();
+		   
+		    	/*  71 */     return localAnswer;
     } // end of getAnswer()
 
 
@@ -105,8 +108,8 @@ public class ProbabilisticGuessPlayer  implements Player
     	temp.column = j;
     	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
-    	System.out.println("North temp.row = " +temp.row);
-    	System.out.println("temp.column = " +temp.column);
+    //	System.out.println("North temp.row = " +temp.row);
+    //	System.out.println("temp.column = " +temp.column);
     		chanceNorth += patrol(i-1, j);
 			chanceNorth += frigate(i-1, j);
 			chanceNorth += sub(i-1, j);
@@ -123,7 +126,7 @@ public class ProbabilisticGuessPlayer  implements Player
  
     	temp.row = i;
     	temp.column = j+1;
-    	if(shots.contains(temp) == false && hits.contains(temp) == false && shots.contains(temp) == false)
+    	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
     		System.out.println("East temp.row = " +temp.row);
     	System.out.println("temp.column = " +temp.column);
@@ -143,7 +146,7 @@ public class ProbabilisticGuessPlayer  implements Player
 
     	temp.row = i+1;
     	temp.column = j;
-    	if(shots.contains(temp) == false && hits.contains(temp) == false && shots.contains(temp) == false)
+    	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
     	System.out.println("South temp.row = " +temp.row);
     	System.out.println("temp.column = " +temp.column);
@@ -237,7 +240,7 @@ public class ProbabilisticGuessPlayer  implements Player
     					chance = 0;
     				}
     					
-    				System.out.println("HIGHEST " + highestCount);
+    			//	System.out.println("HIGHEST " + highestCount);
     			}
     		}
     	}
@@ -872,10 +875,8 @@ public class ProbabilisticGuessPlayer  implements Player
     @Override
     public boolean noRemainingShips() 
     {
-        // To be implemented.
-
-        // dummy return
-        return true;
+    	
+    	 return true;
     } // end of noRemainingShips()
 
 } // end of class ProbabilisticGuessPlayer
