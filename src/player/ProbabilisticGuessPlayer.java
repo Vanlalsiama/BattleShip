@@ -3,8 +3,13 @@ package player;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import ship.AircraftCarrier;
+import ship.Cruiser;
+import ship.Frigate;
+import ship.PatrolCraft;
 //import player.SampleRandomGuessPlayer.OwnShip;
 import ship.Ship;
+import ship.Submarine;
 import world.World;
 import world.World.Coordinate;
 import world.World.ShipLocation;
@@ -18,7 +23,6 @@ import world.World.ShipLocation;
 public class ProbabilisticGuessPlayer  implements Player
 {	
 	private World world;
-	private boolean hunting;
 	private boolean targeting;
 	private ArrayList<ShipLocation> shipLocations;
 	private ArrayList<Coordinate> shots;
@@ -27,23 +31,25 @@ public class ProbabilisticGuessPlayer  implements Player
 	private Coordinate lastHit;
 	private Coordinate firstHit;
 	private boolean isHit=false;
-	private class OwnShip { private OwnShip() {}
-	/*  24 */     Ship ship = null;
-	/*  25 */     int[] rowCdns = { -1, -1, -1, -1, -1 };
-	/*  26 */     int[] clnCdns = { -1, -1, -1, -1, -1 };
-	/*  27 */     boolean[] isdown = { true, true, true, true, true };
-	/*     */     
-	/*     */      }
-	/*  30 */   OwnShip[] ownShips = new OwnShip[5];
+	
+	//inner class to instantiate ownship 
+	public class OwnShip { 
+				public OwnShip() {}
+				Ship ship = null;
+				int[] rowCdns = { -1, -1, -1, -1, -1, -1 };
+				int[] clnCdns = { -1, -1, -1, -1, -1, -1 };
+				boolean[] isdown = { true, true, true, true, true, true };
+   
+   }
+   OwnShip[] ownShips = new OwnShip[10];
 	
     @Override
     public void initialisePlayer(World world) 
     {
     	this.world = world;
-    	this.hunting = false;
     	this.targeting = false;
     	this.shipLocations = world.shipLocations;
-    	this.shots = world.shots;
+    	shots = new ArrayList<Coordinate>();
     	hits = new ArrayList<Coordinate>();
     	aircraft = true;
     	cruiser = true;
@@ -52,17 +58,75 @@ public class ProbabilisticGuessPlayer  implements Player
     	sub = true;
     	firstHit = null;
     	lastHit = null;
-    	// To be implemented.
+    	
+    	AircraftCarrier aircraft1=new AircraftCarrier();
+    	Cruiser cruiser1=new Cruiser();
+    	Frigate frigate1=new Frigate();
+    	PatrolCraft patrol1=new PatrolCraft();
+    	Submarine sub1=new Submarine();
+    	 //instantiates each ship type
+    	 int i=0;
+         for(ShipLocation location : shipLocations){
+         	   ownShips[i] = new OwnShip();
+         		   
+         	   if(i == 0)
+         	   {
+         		  ownShips[i].ship = aircraft1;
+         	   }
+         	   else if(i == 1)
+         	   {
+         		  ownShips[i].ship = frigate1;
+         	   }
+         	   else if(i == 2)
+         	   {
+         		  ownShips[i].ship = sub1;
+         	   }
+         	   else if(i == 3)
+         	   {
+         		  ownShips[i].ship = cruiser1;
+         	   }
+         	   else
+         	   {
+         		  ownShips[i].ship = patrol1;
+         	   }
+
+         				for (int j = 0; j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) {
+         					ownShips[i].rowCdns[j] = location.coordinates.get(j).row;
+         					ownShips[i].clnCdns[j] = location.coordinates.get(j).column;
+         					ownShips[i].isdown[j] = false;
+         					
+         					}
+         				i = i+1;
+         }
     } // end of initialisePlayer()
 
-	@Override
+	//returns whether the shot was  hit or miss to other player
+    @Override
     public Answer getAnswer(Guess guess) 
-    {	Answer localAnswer = new Answer();
-		   
-		    	/*  71 */     return localAnswer;
+    {	
+    	Answer localAnswer = new Answer();
+    	localAnswer.shipSunk = null;
+        		for (int i = 0; i < 5; i++) {			
+        			for (int j = 0; j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) {
+        				if ((guess.row == ownShips[i].rowCdns[j]) && (guess.column == ownShips[i].clnCdns[j])) {
+        					localAnswer.isHit = true;
+        					ownShips[i].isdown[j] = true;
+        					int k = 1;
+        					for (int m = 0; m < ownShips[i].ship.len()*ownShips[i].ship.width(); m++) {
+        						if (ownShips[i].isdown[m] == false) k = 0;
+        					}
+        					if (k != 0) {
+        						localAnswer.shipSunk = ownShips[i].ship;
+        					}
+        					return localAnswer;
+        				}
+        			}
+        		}
+        		return localAnswer;
+		    	  
     } // end of getAnswer()
 
-
+    //main guess function - type of guess based on whether targeting is active or inactive
     @Override
     public Guess makeGuess() 
     {
@@ -88,12 +152,11 @@ public class ProbabilisticGuessPlayer  implements Player
     		guess.column = bestColumn;
     		
     	}
-    	System.out.println("guess row = " + guess.row);
-    	System.out.println("guess column = " + guess.column);
 
     	return guess;
     } // end of makeGuess()
-
+    
+    //checks every adjacent cell to the hit cell. Counts the cell with the highest chance of containing any ship type - called when targeting active
     public Coordinate checkTargeted(int i, int j)
     {
     	Coordinate temp = world.new Coordinate();
@@ -108,14 +171,11 @@ public class ProbabilisticGuessPlayer  implements Player
     	temp.column = j;
     	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
-    //	System.out.println("North temp.row = " +temp.row);
-    //	System.out.println("temp.column = " +temp.column);
     		chanceNorth += patrol(i-1, j);
 			chanceNorth += frigate(i-1, j);
 			chanceNorth += sub(i-1, j);
 			chanceNorth += cruiser(i-1, j);
 			chanceNorth += aircraft(i-1, j); 
-			System.out.println("chance North = " + chanceNorth);
 			if(chanceNorth > highestCount)
 			{
 				highestCount = chanceNorth;
@@ -128,14 +188,11 @@ public class ProbabilisticGuessPlayer  implements Player
     	temp.column = j+1;
     	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
-    		System.out.println("East temp.row = " +temp.row);
-    	System.out.println("temp.column = " +temp.column);
     		chanceEast += patrol(i, j+1);
     		chanceEast += frigate(i, j+1);
     		chanceEast += sub(i, j+1);
     		chanceEast += cruiser(i, j+1);
     		chanceEast += aircraft(i, j+1); 
-    		System.out.println("chance east = " + chanceEast);
     		if(chanceEast > highestCount)
     		{
     			highestCount = chanceEast;
@@ -148,14 +205,11 @@ public class ProbabilisticGuessPlayer  implements Player
     	temp.column = j;
     	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
-    	System.out.println("South temp.row = " +temp.row);
-    	System.out.println("temp.column = " +temp.column);
     		chanceSouth += patrol(i+1, j);
     		chanceSouth += frigate(i+1, j);
     		chanceSouth += sub(i+1, j);
     		chanceSouth += cruiser(i+1, j);
     		chanceSouth += aircraft(i+1, j); 
-    		System.out.println("chance south = " + chanceSouth);
     		if(chanceSouth > highestCount)
     		{
     			highestCount = chanceSouth;
@@ -166,16 +220,13 @@ public class ProbabilisticGuessPlayer  implements Player
 
     	temp.row = i;
     	temp.column = j-1;
-    	if(shots.contains(temp) == false && hits.contains(temp) == false && shots.contains(temp) == false)
+    	if(shots.contains(temp) == false && hits.contains(temp) == false)
     	{
-    	System.out.println("West temp.row = " +temp.row);
-    	System.out.println("temp.column = " +temp.column);
     		chanceWest += patrol(i, j-1);
     		chanceWest += frigate(i, j-1);
     		chanceWest += sub(i, j-1);
     		chanceWest += cruiser(i, j-1);
     		chanceWest += aircraft(i, j-1);
-    		System.out.println("chance west = " + chanceWest);
     		if(chanceWest > highestCount)
     		{
     			highestCount = chanceWest;
@@ -186,7 +237,6 @@ public class ProbabilisticGuessPlayer  implements Player
     	
     	if(highestCount == 0)
     	{
-    		System.out.println("Higest count = " + highestCount);
     		int firstHitrow = firstHit.row;
     		int firstHitColumn = firstHit.column;
     		highestCount = 0;
@@ -199,15 +249,17 @@ public class ProbabilisticGuessPlayer  implements Player
     	}
     	return best;
     }
+    
+    //counts the cells to see which cell has the highest possibility of hitting a ship (counts total of all types and combinations) - called when targeting inactive
     public Coordinate checkBest()
     {
     	int highestCount = 0;
     	int chance = 0;
     	Coordinate best = world.new Coordinate();
     	
-    	for(int i = 0; i < 10; i++)
+    	for(int j = 0; j < 10; j++)
     	{
-    		for(int j = 0; j < 10; j++)
+    		for(int i = 0; i < 10; i++)
     		{
   
     			Coordinate cdn = world.new Coordinate();
@@ -222,7 +274,6 @@ public class ProbabilisticGuessPlayer  implements Player
     				chance += sub(i,j);
     				chance += cruiser(i,j);
     				chance += aircraft(i,j);
-    				System.out.println("row " + cdn.row + "column " + cdn.column +"chance is " + chance);
     				if(chance > highestCount && hits.contains(cdn) == false)
     				{
     					best = cdn;
@@ -239,14 +290,14 @@ public class ProbabilisticGuessPlayer  implements Player
     				{
     					chance = 0;
     				}
-    					
-    			//	System.out.println("HIGHEST " + highestCount);
     			}
     		}
     	}
     	
     	return best;
     }
+    
+    //checks every combination that an aircraft carrier could be in for that cell
     public int aircraft(int i, int j)
     {
 
@@ -522,6 +573,7 @@ public class ProbabilisticGuessPlayer  implements Player
     	return chance;
     }
     
+  //checks every combination that a cruiser could be in for that cell
     public int cruiser(int i, int j)
     {
     	Coordinate temp = world.new Coordinate();
@@ -587,6 +639,8 @@ public class ProbabilisticGuessPlayer  implements Player
 		}
     	return chance;
     }
+    
+    //checks every combination that a submarine could be in for that cell
     public int sub(int i, int j)
     {
     	Coordinate temp = world.new Coordinate();
@@ -656,6 +710,8 @@ public class ProbabilisticGuessPlayer  implements Player
 		}
     	return chance;
     }
+    
+    //checks every combination that a frigate could be in for that cell
     public int frigate(int i, int j)
     {
     	Coordinate temp = world.new Coordinate();
@@ -778,6 +834,7 @@ public class ProbabilisticGuessPlayer  implements Player
     	return chance;
     }
     
+    //checks every combination that a patrol ship could be in for that cell
     public int patrol(int i, int j)
     {
     	Coordinate temp = world.new Coordinate();
@@ -812,13 +869,14 @@ public class ProbabilisticGuessPlayer  implements Player
 		return chance;
     }
     
+    
+    //updates the status of targeting based on returned answer. Sets remaining ships to false if a ship is sunk
 	@Override
     public void update(Guess guess, Answer answer) 
     {
     	
     	if(answer.isHit == true && answer.shipSunk == null)
     	{
-    		System.out.println("HIT!");
     		lastHit = world.new Coordinate();
     		lastHit.row = guess.row;
     		lastHit.column = guess.column;
@@ -836,7 +894,6 @@ public class ProbabilisticGuessPlayer  implements Player
     		sinkHit.row = guess.row;
     		sinkHit.column = guess.column;
     		hits.add(sinkHit);
-    		System.out.print("HIT! & SUNK!");
     		if(answer.shipSunk.name().equals("AircraftCarrier"))
     		{
     			aircraft = false;
@@ -862,7 +919,6 @@ public class ProbabilisticGuessPlayer  implements Player
     	}
     	if(answer.isHit == false)
     	{
-    		System.out.println("MISS!");
     		Coordinate miss = world.new Coordinate();
     		miss.row = guess.row;
     		miss.column = guess.column;
@@ -871,11 +927,16 @@ public class ProbabilisticGuessPlayer  implements Player
         // To be implemented.
     } // end of update()
 
-
+	//checks if there are no more remaining ships
     @Override
     public boolean noRemainingShips() 
     {
-    	
+    	for (int i = 0; i < 5; i++) {
+    		for (int j = 0; j < ownShips[i].ship.len(); j++) {
+    		if (ownShips[i].isdown[j] == false)
+    		return false;
+    		}
+    		}
     	 return true;
     } // end of noRemainingShips()
 
