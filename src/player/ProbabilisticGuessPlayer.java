@@ -592,7 +592,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.column = j;
-					if(shots.contains(temp) == false && temp.column >= clnSize)
+					if(shots.contains(temp) == false && temp.column >= 0)
 					{
 						chance++;
 					}
