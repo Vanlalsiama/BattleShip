@@ -31,23 +31,27 @@ public class ProbabilisticGuessPlayer  implements Player
 	private Coordinate lastHit;
 	private Coordinate firstHit;
 	private boolean isHit=false;
+	private int rowSize;
+	private int clnSize;
 	
 	//inner class to instantiate ownship 
-	public class OwnShip { 
-				public OwnShip() {}
+	public class DiffShips { 
+				public DiffShips() {}
 				Ship ship = null;
 				int[] rowCdns = { -1, -1, -1, -1, -1, -1 };
 				int[] clnCdns = { -1, -1, -1, -1, -1, -1 };
-				boolean[] isdown = { true, true, true, true, true, true };
+				boolean[] isShunk = { true, true, true, true, true, true };
    
    }
-   OwnShip[] ownShips = new OwnShip[10];
+   DiffShips[] diffShips = new DiffShips[10];
 	
     @Override
     public void initialisePlayer(World world) 
     {
     	this.world = world;
     	this.targeting = false;
+    	this.rowSize=world.numRow;
+    	this.clnSize=world.numColumn;
     	this.shipLocations = world.shipLocations;
     	shots = new ArrayList<Coordinate>();
     	hits = new ArrayList<Coordinate>();
@@ -67,33 +71,33 @@ public class ProbabilisticGuessPlayer  implements Player
     	 //instantiates each ship type
     	 int i=0;
          for(ShipLocation location : shipLocations){
-         	   ownShips[i] = new OwnShip();
+         	   diffShips[i] = new DiffShips();
          		   
          	   if(i == 0)
          	   {
-         		  ownShips[i].ship = aircraft1;
+         		  diffShips[i].ship = aircraft1;
          	   }
          	   else if(i == 1)
          	   {
-         		  ownShips[i].ship = frigate1;
+         		  diffShips[i].ship = frigate1;
          	   }
          	   else if(i == 2)
          	   {
-         		  ownShips[i].ship = sub1;
+         		  diffShips[i].ship = sub1;
          	   }
          	   else if(i == 3)
          	   {
-         		  ownShips[i].ship = cruiser1;
+         		  diffShips[i].ship = cruiser1;
          	   }
          	   else
          	   {
-         		  ownShips[i].ship = patrol1;
+         		  diffShips[i].ship = patrol1;
          	   }
 
-         				for (int j = 0; j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) {
-         					ownShips[i].rowCdns[j] = location.coordinates.get(j).row;
-         					ownShips[i].clnCdns[j] = location.coordinates.get(j).column;
-         					ownShips[i].isdown[j] = false;
+         				for (int j = 0; j < diffShips[i].ship.len()*diffShips[i].ship.width(); j++) {
+         					diffShips[i].rowCdns[j] = location.coordinates.get(j).row;
+         					diffShips[i].clnCdns[j] = location.coordinates.get(j).column;
+         					diffShips[i].isShunk[j] = false;
          					
          					}
          				i = i+1;
@@ -107,16 +111,16 @@ public class ProbabilisticGuessPlayer  implements Player
     	Answer localAnswer = new Answer();
     	localAnswer.shipSunk = null;
         		for (int i = 0; i < 5; i++) {			
-        			for (int j = 0; j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) {
-        				if ((guess.row == ownShips[i].rowCdns[j]) && (guess.column == ownShips[i].clnCdns[j])) {
+        			for (int j = 0; j < diffShips[i].ship.len()*diffShips[i].ship.width(); j++) {
+        				if ((guess.row == diffShips[i].rowCdns[j]) && (guess.column == diffShips[i].clnCdns[j])) {
         					localAnswer.isHit = true;
-        					ownShips[i].isdown[j] = true;
+        					diffShips[i].isShunk[j] = true;
         					int k = 1;
-        					for (int m = 0; m < ownShips[i].ship.len()*ownShips[i].ship.width(); m++) {
-        						if (ownShips[i].isdown[m] == false) k = 0;
+        					for (int m = 0; m < diffShips[i].ship.len()*diffShips[i].ship.width(); m++) {
+        						if (diffShips[i].isShunk[m] == false) k = 0;
         					}
         					if (k != 0) {
-        						localAnswer.shipSunk = ownShips[i].ship;
+        						localAnswer.shipSunk = diffShips[i].ship;
         					}
         					return localAnswer;
         				}
@@ -257,9 +261,9 @@ public class ProbabilisticGuessPlayer  implements Player
     	int chance = 0;
     	Coordinate best = world.new Coordinate();
     	
-    	for(int j = 0; j < 10; j++)
+    	for(int j = 0; j < rowSize; j++)
     	{
-    		for(int i = 0; i < 10; i++)
+    		for(int i = 0; i < clnSize; i++)
     		{
   
     			Coordinate cdn = world.new Coordinate();
@@ -313,7 +317,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false && temp.column >= 0)
 				{
 					temp.row = i+1;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						temp.column = j-1;
 						if(shots.contains(temp) == false)
@@ -329,13 +333,13 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.column = j+2;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					temp.row = i+1;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						temp.column = j+1;
 						if(shots.contains(temp) == false)
@@ -376,10 +380,10 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.row >= 0)
 			{
 				temp.column = j+1;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					temp.column = j+2;
-					if(shots.contains(temp) == false && temp.column < 10)
+					if(shots.contains(temp) == false && temp.column <= clnSize)
 					{
 						temp.row = i;
 						if(shots.contains(temp) == false)
@@ -420,10 +424,10 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.column >= 0)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.row = i+2;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						temp.column = j;
 						if(shots.contains(temp) == false)
@@ -439,13 +443,13 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.row = i+2;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						temp.column = j;
 						if(shots.contains(temp) == false)
@@ -467,7 +471,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false && temp.row >= 0)
 				{
 					temp.column = j+1;
-					if(shots.contains(temp) == false && temp.column < 10)
+					if(shots.contains(temp) == false && temp.column <= clnSize)
 					{
 						temp.row = i-1;
 						if(shots.contains(temp) == false)
@@ -486,13 +490,13 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.column >= 0)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.column = j;
 					if(shots.contains(temp) == false)
 					{
 						temp.column = j+1;
-						if(shots.contains(temp) == false && temp.column < 10)
+						if(shots.contains(temp) == false && temp.column <= clnSize)
 						{
 							temp.row = i;
 							if(shots.contains(temp) == false)
@@ -514,7 +518,7 @@ public class ProbabilisticGuessPlayer  implements Player
 					if(shots.contains(temp) == false)
 					{
 						temp.column = j+1;
-						if(shots.contains(temp) == false && temp.column < 10)
+						if(shots.contains(temp) == false && temp.column <= clnSize)
 						{
 							temp.row = i;
 							if(shots.contains(temp) == false)
@@ -527,7 +531,7 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i+1;
 			temp.column = j;
-			if(shots.contains(temp) == false && temp.row < 10)
+			if(shots.contains(temp) == false && temp.row <= rowSize)
 			{
 				temp.column = j-1;
 				if(shots.contains(temp) == false && temp.column >= 0)
@@ -552,13 +556,13 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.row >= 0)
 			{
 				temp.column = j+1;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					temp.row = i;
 					if(shots.contains(temp) == false)
 					{
 						temp.row = i+1;
-						if(shots.contains(temp) == false && temp.row < 10)
+						if(shots.contains(temp) == false && temp.row <= rowSize)
 						{
 							temp.column = j;
 							if(shots.contains(temp) == false)
@@ -582,13 +586,13 @@ public class ProbabilisticGuessPlayer  implements Player
 		{
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.column = j;
-					if(shots.contains(temp) == false && temp.column >= 0)
+					if(shots.contains(temp) == false && temp.column >= clnSize)
 					{
 						chance++;
 					}
@@ -602,7 +606,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false && temp.column >= 0)
 				{
 					temp.row = i;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						chance++;
 					}
@@ -610,7 +614,7 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i+1;
 			temp.column = j;
-			if(shots.contains(temp) == false && temp.row < 10)
+			if(shots.contains(temp) == false && temp.row <= rowSize)
 			{
 				temp.column = j-1;
 				if(shots.contains(temp) == false && temp.column >= 0)
@@ -624,7 +628,7 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.row = i-1;
 				if(shots.contains(temp) == false && temp.row >= 0)
@@ -649,20 +653,20 @@ public class ProbabilisticGuessPlayer  implements Player
 		{
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.column = j+2;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					chance++;
 				}
 			}
 			temp.row = i+1;
 			temp.column = j;
-			if(shots.contains(temp) == false && temp.row < 10)
+			if(shots.contains(temp) == false && temp.row <= rowSize)
 			{
 				temp.row = i+2;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					chance++;
 				}
@@ -692,7 +696,7 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.row >= 0)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					chance++;
 				}
@@ -702,7 +706,7 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.column >= 0)
 			{
 				temp.column = j+1;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					chance++;
 				}
@@ -720,13 +724,13 @@ public class ProbabilisticGuessPlayer  implements Player
 		{
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				temp.column = j+2;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <= clnSize)
 				{
 					temp.column = j+3;
-					if(shots.contains(temp) == false && temp.column < 10)
+					if(shots.contains(temp) == false && temp.column <= clnSize)
 					{
 						chance++;
 					}
@@ -734,13 +738,13 @@ public class ProbabilisticGuessPlayer  implements Player
 			}
 			temp.row = i+1;
 			temp.column = j;
-			if(shots.contains(temp) == false && temp.row < 10)
+			if(shots.contains(temp) == false && temp.row <= rowSize)
 			{
 				temp.row = i+2;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.row = i+3;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						chance++;
 					}
@@ -782,7 +786,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false)
 				{
 					temp.row = i+1;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						chance++;
 					}
@@ -793,10 +797,10 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.row >= 0)
 			{
 				temp.row = i+1;
-				if(shots.contains(temp) == false && temp.row < 10)
+				if(shots.contains(temp) == false && temp.row <= rowSize)
 				{
 					temp.row = i+2;
-					if(shots.contains(temp) == false && temp.row < 10)
+					if(shots.contains(temp) == false && temp.row <= rowSize)
 					{
 						chance++;
 					}
@@ -810,7 +814,7 @@ public class ProbabilisticGuessPlayer  implements Player
 				if(shots.contains(temp) == false && temp.column >= 0)
 				{
 					temp.column = j+1;
-					if(shots.contains(temp) == false && temp.column < 10)
+					if(shots.contains(temp) == false && temp.column <= clnSize)
 					{
 						chance++;
 					}
@@ -821,10 +825,10 @@ public class ProbabilisticGuessPlayer  implements Player
 			if(shots.contains(temp) == false && temp.column >= 0)
 			{
 				temp.column = j+1;
-				if(shots.contains(temp) == false && temp.column < 10)
+				if(shots.contains(temp) == false && temp.column <=clnSize)
 				{
 					temp.column = j+2;
-					if(shots.contains(temp) == false && temp.column < 10)
+					if(shots.contains(temp) == false && temp.column <=clnSize)
 					{
 						chance++;
 					}
@@ -843,13 +847,13 @@ public class ProbabilisticGuessPlayer  implements Player
 		{
 			temp.row = i;
 			temp.column = j+1;
-			if(shots.contains(temp) == false && temp.column < 10)
+			if(shots.contains(temp) == false && temp.column <= clnSize)
 			{
 				chance++;
 			}
 			temp.row = i+1;
 			temp.column = j;
-			if(shots.contains(temp) == false && temp.row < 10)
+			if(shots.contains(temp) == false && temp.row <= rowSize)
 			{
 				chance++;
 			}
@@ -932,8 +936,8 @@ public class ProbabilisticGuessPlayer  implements Player
     public boolean noRemainingShips() 
     {
     	for (int i = 0; i < 5; i++) {
-    		for (int j = 0; j < ownShips[i].ship.len(); j++) {
-    		if (ownShips[i].isdown[j] == false)
+    		for (int j = 0; j < diffShips[i].ship.len(); j++) {
+    		if (diffShips[i].isShunk[j] == false)
     		return false;
     		}
     		}

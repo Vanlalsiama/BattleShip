@@ -1,10 +1,11 @@
 package player;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Scanner;
 
-import player.RandomGuessPlayer.OwnShip;
+//import player.RandomGuessPlayer.OwnShip;
 import ship.AircraftCarrier;
 import ship.Cruiser;
 import ship.Frigate;
@@ -15,6 +16,8 @@ import world.World;
 import world.World.Coordinate;
 import world.World.ShipLocation;
 
+import java.util.LinkedList;
+
 /**
  * Greedy guess player (task B). Please implement this class.
  *
@@ -24,11 +27,18 @@ public class GreedyGuessPlayer implements Player {
 	private static ArrayList<Coordinate> hits = new ArrayList<Coordinate>();
 	private Coordinate firstHit;
 	private Coordinate lastHit;
+	private Coordinate boardSize;
 	private World world;
 	private int lastX = 1;
 	private int lastY = 0;
+	private int firstCount=0;
+
+	private int rowSize;
+	private int clnSize;
 	private ArrayList<Coordinate> huntHits = new ArrayList<Coordinate>();
-	private int axis = 0;
+	//private LinkedList<Coordinate> huntHits = new LinkedList<Coordinate>();
+	//private HashSet<Coordinate> visited = new HashSet<Coordinate>();
+	private int direction = 0;
 	private int len = 0;
 	private boolean aircraft, cruiser, frigate, patrol, sub;
 	private ArrayList<ShipLocation> shipLocations;
@@ -49,7 +59,14 @@ public class GreedyGuessPlayer implements Player {
 
 	@Override
 	public void initialisePlayer(World world) {
+		Random random = new Random();
+		
+
+		this.clnSize = world.numColumn;
+		this.rowSize = world.numRow;
 		this.world = world;
+		this.rowSize = world.numRow;
+		this.clnSize = world.numColumn;
 		this.shipLocations = world.shipLocations;
 		shots = new ArrayList<Coordinate>();
 		hits = new ArrayList<Coordinate>();
@@ -95,65 +112,78 @@ public class GreedyGuessPlayer implements Player {
 
 	@Override
 	public Answer getAnswer(Guess guess) {
-		
-		Answer localAnswer = new Answer();
-    	localAnswer.shipSunk = null;
-        		for (int i = 0; i < 5; i++) {			
-        			for (int j = 0; j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) {
-        				if ((guess.row == ownShips[i].rowCdns[j]) && (guess.column == ownShips[i].clnCdns[j])) {
-        					localAnswer.isHit = true;
-        					ownShips[i].isdown[j] = true;
-        					int k = 1;
-        					for (int m = 0; m < ownShips[i].ship.len()*ownShips[i].ship.width(); m++) {
-        						if (ownShips[i].isdown[m] == false) k = 0;
-        					}
-        					if (k != 0) {
-        						localAnswer.shipSunk = ownShips[i].ship;
-        					}
-        					return localAnswer;
-        				}
-        			}
-        		}
-        		return localAnswer;
+
+		Answer answer = new Answer();
+		/*
+		 * answer.shipSunk = null; for (int i = 0; i < 5; i++) { for (int j = 0;
+		 * j < ownShips[i].ship.len()*ownShips[i].ship.width(); j++) { if
+		 * ((guess.row == ownShips[i].rowCdns[j]) && (guess.column ==
+		 * ownShips[i].clnCdns[j])) { answer.isHit = true; ownShips[i].isdown[j]
+		 * = true; int k = 1; for (int m = 0; m <
+		 * ownShips[i].ship.len()*ownShips[i].ship.width(); m++) { if
+		 * (ownShips[i].isdown[m] == false) k = 0; } if (k != 0) {
+		 * answer.shipSunk = ownShips[i].ship; } return answer; } }}
+		 */
+		return answer;
 	} // end of getAnswer()
 
 	@Override
 	public Guess makeGuess() {
 		Guess guess = new Guess();
+
 		guess.column = lastX;
 		guess.row = lastY;
+
 		if (huntHits.size() > 0) {
-			
-			// Hunting mode
-			switch (axis) {
-			case 0:
+
+			// targeting mode
+			switch (direction) {
+			case 0: // east
+				// System.out.println(Integer.toString(huntHits.get(0).row) +
+				// ","
+				// + Integer.toString(huntHits.get(0).column) + " E" );
 				guess.column = huntHits.get(0).column + len;
 				guess.row = huntHits.get(0).row;
+
 				break;
-			case 1:
+			case 1: // north
+				// System.out.println(Integer.toString(huntHits.get(0).row) +
+				// ","
+				// + Integer.toString(huntHits.get(0).column) + " N" );
+
 				guess.column = huntHits.get(0).column;
 				guess.row = huntHits.get(0).row + len;
+
 				break;
-			case 2:
+			case 2: // west
+				// System.out.println(Integer.toString(huntHits.get(0).row) +
+				// ","
+				// + Integer.toString(huntHits.get(0).column) + " W" );
 				guess.column = huntHits.get(0).column - len;
 				guess.row = huntHits.get(0).row;
 				break;
-			case 3:
+			case 3: // south
+				// System.out.println(Integer.toString(huntHits.get(0).row) +
+				// ","
+				// + Integer.toString(huntHits.get(0).column) + " S" );
 				guess.column = huntHits.get(0).column;
 				guess.row = huntHits.get(0).row - len;
 				break;
 			}
 		} else {
-			// Searching mode
-			if (lastX == 8) {
+
+			// Hunting mode
+			
+			if (lastX == clnSize-1) {
+				lastY++;
+				lastX= 0;
+			} else if (lastX == clnSize - 2) {
 				lastY++;
 				lastX = 1;
-			} else if (lastX == 9) {
-				lastY++;
-				lastX = 0;
 			} else {
 				lastX += 2;
 			}
+
 		}
 		return guess;
 	}
@@ -164,6 +194,7 @@ public class GreedyGuessPlayer implements Player {
 			lastHit = world.new Coordinate();
 			lastHit.row = guess.row;
 			lastHit.column = guess.column;
+
 			if (firstHit == null) {
 				firstHit = world.new Coordinate();
 				firstHit = lastHit;
@@ -172,24 +203,29 @@ public class GreedyGuessPlayer implements Player {
 			hits.add(lastHit);
 			huntHits.add(lastHit);
 			len++;
+			System.out.println(Integer.toString(len) + " len");
 		}
 
 		if (answer.isHit == false) {
 			if (huntHits.size() > 0) {
-				if (axis == 3) {
+				if (direction == 3) {
+					lastHit.column = huntHits.get(0).column;
+					lastHit.row = huntHits.get(0).row + len;
+					firstHit = lastHit;
 					huntHits.remove(0);
-					axis = 0;
+					direction = 0;
 					len = 0;
 				} else {
-					axis++;
+					direction++;
 					len = 0;
 				}
 			}
-	
+
 			Coordinate miss = world.new Coordinate();
 			miss.row = guess.row;
 			miss.column = guess.column;
 			shots.add(miss);
+
 		}
 
 		if (answer.isHit == true && answer.shipSunk != null) {
@@ -213,7 +249,7 @@ public class GreedyGuessPlayer implements Player {
 			if (answer.shipSunk.name().equals("Submarine")) {
 				sub = false;
 			}
-			axis = 0;
+			direction = 0;
 			len = 0;
 			firstHit = null;
 		}
@@ -222,15 +258,13 @@ public class GreedyGuessPlayer implements Player {
 
 	@Override
 	public boolean noRemainingShips() {
-		
-		for (int i = 0; i < 5; i++) {
-      		for (int j = 0; j < ownShips[i].ship.len(); j++) {
-        		if (ownShips[i].isdown[j] == false)
-        		return false;
-        		}
-        		}
-        	 return true;
-		
+		/*
+		 * for (int i = 0; i < 5; i++) { for (int j = 0; j <
+		 * ownShips[i].ship.len(); j++) { if (ownShips[i].isdown[j] == false)
+		 * return false; } }
+		 */
+		return true;
+
 	} // end of noRemainingShips()
 
 } // end of class GreedyGuessPlayer
